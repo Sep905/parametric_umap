@@ -51,6 +51,7 @@ Parametric UMAP ([original paper](https://arxiv.org/abs/2009.12981)) extends the
 - GPU acceleration support
 - Model saving and loading capabilities
 - Correlation loss term to preserve distance relationships
+- Optional parametric decoder and joint autoencoder training
 
 ## Quick Start
 
@@ -78,6 +79,30 @@ embeddings = pumap.fit_transform(X)
 X_new = np.random.rand(100, 3)
 new_embeddings = pumap.transform(X_new)
 ```
+
+### Autoencoding Parametric UMAP
+
+Enable parametric reconstruction and allow its loss to update the encoder to
+train a joint Parametric UMAP autoencoder:
+
+```python
+pumap = ParametricUMAP(
+    n_components=2,
+    parametric_reconstruction=True,
+    autoencoder_loss=True,
+    parametric_reconstruction_loss_weight=0.1,
+    reconstruction_loss="mse",
+)
+
+embeddings = pumap.fit_transform(X)
+reconstructed_X = pumap.inverse_transform(embeddings)
+reconstructed_X_direct = pumap.reconstruct(X)
+```
+
+Set `autoencoder_loss=False` to train the decoder without propagating the
+reconstruction loss through the encoder. The supported reconstruction losses
+are `"mse"` for general continuous features and `"bce"` for features scaled to
+the `[0, 1]` interval.
 
 You can also specify the device explicitly:
 
@@ -118,6 +143,10 @@ new_embeddings = pumap.transform(X_new, batch_size=4096)
 - `use_batchnorm`: Whether to use batch normalization in the embedding MLP (default: False)
 - `use_dropout`: Whether to use dropout in the embedding MLP (default: False)
 - `compile_model`: Apply `torch.compile` to the MLP for faster training on PyTorch 2.x (default: False). Adds a one-time compilation delay on the first forward pass
+- `parametric_reconstruction`: Train a decoder from the embedding to the input space (default: False)
+- `autoencoder_loss`: Propagate reconstruction loss through the encoder for joint autoencoder training (default: False)
+- `parametric_reconstruction_loss_weight`: Weight of reconstruction loss relative to UMAP loss (default: 1.0)
+- `reconstruction_loss`: Reconstruction objective, either `"mse"` or `"bce"` (default: `"mse"`)
 
 ## Development
 
